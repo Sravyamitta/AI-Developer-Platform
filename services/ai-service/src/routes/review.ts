@@ -1,23 +1,13 @@
 import { Router } from "express";
-import { anthropic, MODEL } from "../claude";
+import { getModel, MODEL_NAME } from "../gemini";
 import { hashInput, getCached, saveCache } from "../cache";
 import { startSSE } from "../stream";
 import { withRetry } from "../retry";
 
 export const reviewRouter = Router();
 
-const SYSTEM = `You are a senior software engineer performing a thorough code review.
-Structure your response with these sections:
-## Summary
-## Issues
-## Suggestions
-## Verdict
-Verdict must end with one of: APPROVE | REQUEST_CHANGES | COMMENT
-Be specific, reference line numbers where relevant, and keep feedback actionable.`;
-
 // POST /api/ai/review
 // Body: { diff, filename, context? }
-// Streams SSE events: chunk | cached | done | error
 reviewRouter.post("/", async (req, res) => {
   const { diff, filename, context } = req.body;
 
@@ -29,7 +19,6 @@ reviewRouter.post("/", async (req, res) => {
   const { send, done, error } = startSSE(res);
   const cacheKey = hashInput("review", { diff, filename, context });
 
-  // Check cache first
   const cached = await getCached(cacheKey).catch(() => null);
   if (cached) {
     send("cached", cached);
@@ -37,36 +26,40 @@ reviewRouter.post("/", async (req, res) => {
     return;
   }
 
-  const userContent = `File: ${filename}
+  const prompt = `You are a senior software engineer performing a thorough code review.
+
+File: ${filename}
 ${context ? `Context: ${context}\n` : ""}
 Diff to review:
 \`\`\`diff
 ${diff}
-\`\`\``;
+\`\`\`
+
+Provide a structured code review with these sections:
+## Summary
+## Issues
+## Suggestions
+## Verdict
+Verdict must end with one of: APPROVE | REQUEST_CHANGES | COMMENT
+Be specific, reference line numbers where relevant, and keep feedback actionable.`;
 
   let fullText = "";
 
   try {
     await withRetry(async () => {
-      const stream = anthropic.messages.stream({
-        model: MODEL,
-        max_tokens: 2048,
-        system: SYSTEM,
-        messages: [{ role: "user", content: userContent }],
-      });
+      const model = getModel();
+      const result = await model.generateContentStream(prompt);
 
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          send("chunk", event.delta.text);
-          fullText += event.delta.text;
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          send("chunk", text);
+          fullText += text;
         }
       }
     });
 
-    await saveCache("review", cacheKey, fullText, MODEL).catch(() => {});
+    await saveCache("review", cacheKey, fullText, MODEL_NAME).catch(() => {});
     done();
   } catch (err: any) {
     console.error("Review stream error:", err);

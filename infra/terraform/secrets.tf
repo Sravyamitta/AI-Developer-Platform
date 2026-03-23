@@ -14,8 +14,7 @@ resource "aws_secretsmanager_secret_version" "app_placeholder" {
   secret_string = jsonencode({
     DATABASE_URL          = "postgresql://${var.db_username}:CHANGE_ME@${aws_db_instance.main.endpoint}/${var.db_name}"
     JWT_SECRET            = "CHANGE_ME_min_32_chars"
-    ANTHROPIC_API_KEY     = "CHANGE_ME"
-    VOYAGE_API_KEY        = "CHANGE_ME"
+    GEMINI_API_KEY        = "CHANGE_ME"
     GITHUB_CLIENT_ID      = "CHANGE_ME"
     GITHUB_CLIENT_SECRET  = "CHANGE_ME"
     GITHUB_WEBHOOK_SECRET = "CHANGE_ME"

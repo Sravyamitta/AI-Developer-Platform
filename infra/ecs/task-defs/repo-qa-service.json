@@ -15,7 +15,7 @@
         { "name": "EMBEDDINGS_SERVICE_PORT", "value": "3004" }
       ],
       "secrets": [
-        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:ANTHROPIC_API_KEY::" }
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GEMINI_API_KEY::" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

@@ -1,8 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
+const RETRYABLE_MESSAGES = ["429", "500", "502", "503", "quota"];
 
-const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 529]);
-
-/** Call fn with exponential backoff on rate-limit / server errors. */
 export async function withRetry<T>(
   fn: () => Promise<T>,
   maxAttempts = 3,
@@ -13,18 +10,16 @@ export async function withRetry<T>(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
-    } catch (err) {
+    } catch (err: any) {
       lastErr = err;
+      const msg: string = err?.message ?? "";
+      const isRetryable = RETRYABLE_MESSAGES.some((s) => msg.includes(s));
 
-      const status =
-        err instanceof Anthropic.APIError ? err.status : undefined;
-
-      if (status && RETRYABLE_STATUSES.has(status)) {
+      if (isRetryable) {
         const delay = baseDelayMs * 2 ** (attempt - 1);
-        console.warn(`Attempt ${attempt} failed (${status}), retrying in ${delay}ms...`);
+        console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms…`);
         await new Promise((r) => setTimeout(r, delay));
       } else {
-        // Non-retryable error — throw immediately
         throw err;
       }
     }

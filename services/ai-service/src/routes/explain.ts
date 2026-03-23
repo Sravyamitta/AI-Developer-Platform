@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { anthropic, MODEL } from "../claude";
+import { getModel, MODEL_NAME } from "../gemini";
 import { hashInput, getCached, saveCache } from "../cache";
 import { startSSE } from "../stream";
 import { withRetry } from "../retry";
@@ -59,24 +59,19 @@ Provide:
 
   try {
     await withRetry(async () => {
-      const stream = anthropic.messages.stream({
-        model: MODEL,
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      });
+      const model = getModel();
+      const result = await model.generateContentStream(prompt);
 
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          send("chunk", event.delta.text);
-          fullText += event.delta.text;
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          send("chunk", text);
+          fullText += text;
         }
       }
     });
 
-    await saveCache("explain", cacheKey, fullText, MODEL).catch(() => {});
+    await saveCache("explain", cacheKey, fullText, MODEL_NAME).catch(() => {});
     done();
   } catch (err: any) {
     console.error("Explain stream error:", err);

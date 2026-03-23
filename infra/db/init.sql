@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS indexed_repos (
   UNIQUE(user_id, repo_full_name)
 );
 
--- Code embeddings — 1024-dim (Voyage code-3 / OpenAI text-embedding-3-small)
+-- Code embeddings — 768-dim (Gemini text-embedding-004)
 CREATE TABLE IF NOT EXISTS code_embeddings (
   id             BIGSERIAL PRIMARY KEY,
   repo_full_name TEXT NOT NULL,
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS code_embeddings (
   start_line     INT NOT NULL,
   end_line       INT NOT NULL,
   content        TEXT NOT NULL,
-  symbol_names   TEXT[],        -- extracted function/class names in this chunk
-  embedding      vector(1024),
+  symbol_names   TEXT[],
+  embedding      vector(768),
   created_at     TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -12,11 +12,11 @@
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
         { "name": "EMBEDDINGS_SERVICE_PORT", "value": "3004" },
-        { "name": "EMBEDDING_PROVIDER", "value": "voyage" }
+        { "name": "EMBEDDING_PROVIDER", "value": "gemini" }
       ],
       "secrets": [
         { "name": "DATABASE_URL",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
-        { "name": "VOYAGE_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:VOYAGE_API_KEY::" }
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GEMINI_API_KEY::" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

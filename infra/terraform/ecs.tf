@@ -90,8 +90,7 @@ locals {
   common_secrets = [
     { name = "DATABASE_URL",          valueFrom = "${aws_secretsmanager_secret.app.arn}:DATABASE_URL::" },
     { name = "JWT_SECRET",            valueFrom = "${aws_secretsmanager_secret.app.arn}:JWT_SECRET::" },
-    { name = "ANTHROPIC_API_KEY",     valueFrom = "${aws_secretsmanager_secret.app.arn}:ANTHROPIC_API_KEY::" },
-    { name = "VOYAGE_API_KEY",        valueFrom = "${aws_secretsmanager_secret.app.arn}:VOYAGE_API_KEY::" },
+    { name = "GEMINI_API_KEY",         valueFrom = "${aws_secretsmanager_secret.app.arn}:GEMINI_API_KEY::" },
     { name = "GITHUB_CLIENT_ID",      valueFrom = "${aws_secretsmanager_secret.app.arn}:GITHUB_CLIENT_ID::" },
     { name = "GITHUB_CLIENT_SECRET",  valueFrom = "${aws_secretsmanager_secret.app.arn}:GITHUB_CLIENT_SECRET::" },
     { name = "GITHUB_WEBHOOK_SECRET", valueFrom = "${aws_secretsmanager_secret.app.arn}:GITHUB_WEBHOOK_SECRET::" },
@@ -120,7 +119,7 @@ resource "aws_ecs_task_definition" "services" {
 
     environment = [
       { name = "NODE_ENV",                value = "production" },
-      { name = "EMBEDDING_PROVIDER",      value = "voyage" },
+      { name = "EMBEDDING_PROVIDER",      value = "gemini" },
       { name = "API_GATEWAY_PORT",        value = "3001" },
       { name = "GITHUB_SERVICE_PORT",     value = "3002" },
       { name = "AI_SERVICE_PORT",         value = "3003" },

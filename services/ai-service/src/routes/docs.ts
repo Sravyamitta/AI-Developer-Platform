@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { anthropic, MODEL } from "../claude";
+import { getModel, MODEL_NAME } from "../gemini";
 import { hashInput, getCached, saveCache } from "../cache";
 import { startSSE } from "../stream";
 import { withRetry } from "../retry";
@@ -10,7 +10,7 @@ const STYLE_INSTRUCTIONS: Record<string, string> = {
   jsdoc:
     "Generate JSDoc comments for all functions, classes, and exported symbols. Return only the commented source code.",
   markdown:
-    "Generate a Markdown documentation page with: Overview, Installation/Usage, API Reference (all exports with params + return types), and Examples.",
+    "Generate a Markdown documentation page with: Overview, Usage, API Reference (all exports with params + return types), and Examples.",
   inline:
     "Add concise inline comments throughout the code explaining non-obvious logic. Return the fully commented source code.",
 };
@@ -54,24 +54,19 @@ Generate high-quality documentation. Be accurate, concise, and developer-friendl
 
   try {
     await withRetry(async () => {
-      const stream = anthropic.messages.stream({
-        model: MODEL,
-        max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }],
-      });
+      const model = getModel();
+      const result = await model.generateContentStream(prompt);
 
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          send("chunk", event.delta.text);
-          fullText += event.delta.text;
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          send("chunk", text);
+          fullText += text;
         }
       }
     });
 
-    await saveCache("docs", cacheKey, fullText, MODEL).catch(() => {});
+    await saveCache("docs", cacheKey, fullText, MODEL_NAME).catch(() => {});
     done();
   } catch (err: any) {
     console.error("Docs stream error:", err);

@@ -14,8 +14,8 @@
         { "name": "AI_SERVICE_PORT", "value": "3003" }
       ],
       "secrets": [
-        { "name": "DATABASE_URL",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
-        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:ANTHROPIC_API_KEY::" }
+        { "name": "DATABASE_URL",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GEMINI_API_KEY::" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

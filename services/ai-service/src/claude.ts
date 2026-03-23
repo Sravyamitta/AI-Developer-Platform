@@ -1,7 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-export const MODEL = "claude-sonnet-4-6";
+// Replaced by gemini.ts — this file is no longer used.
+// All AI calls now go through src/gemini.ts using Google Gemini (free tier).
+export {};

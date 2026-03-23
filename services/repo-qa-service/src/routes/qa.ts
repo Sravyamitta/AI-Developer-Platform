@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import axios from "axios";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const qaRouter = Router();
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL = "claude-sonnet-4-6";
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const MODEL_NAME = "gemini-1.5-flash";
 const EMBEDDINGS_URL = `http://localhost:${process.env.EMBEDDINGS_SERVICE_PORT || 3004}`;
 
 function startSSE(res: Response) {
@@ -36,7 +36,7 @@ qaRouter.post("/", async (req: Request, res: Response) => {
   const { send, done, error } = startSSE(res);
 
   try {
-    // Step 1: Retrieve relevant code chunks
+    // Step 1: Retrieve relevant code chunks via vector search
     const { data } = await axios.post(`${EMBEDDINGS_URL}/api/embeddings/search`, {
       repoFullName,
       query: question,
@@ -57,7 +57,7 @@ qaRouter.post("/", async (req: Request, res: Response) => {
       return;
     }
 
-    // Emit sources metadata before streaming answer
+    // Step 2: Emit sources before streaming answer
     send("sources", chunks.map((c) => ({
       filePath: c.file_path,
       startLine: c.start_line,
@@ -65,19 +65,15 @@ qaRouter.post("/", async (req: Request, res: Response) => {
       similarity: c.similarity,
     })));
 
-    // Step 2: Build context
+    // Step 3: Build context
     const context = chunks
       .map((c) => `// File: ${c.file_path} (lines ${c.start_line}-${c.end_line})\n${c.content}`)
       .join("\n\n---\n\n");
 
-    // Step 3: Stream answer from Claude
-    const stream = anthropic.messages.stream({
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `You are an expert developer assistant for the repository "${repoFullName}".
+    // Step 4: Stream answer from Gemini
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    const result = await model.generateContentStream(
+      `You are an expert developer assistant for the repository "${repoFullName}".
 
 Use the following code context to answer the question. If the answer is not in the context, say so clearly.
 
@@ -87,18 +83,12 @@ ${context}
 
 Question: ${question}
 
-Provide a clear, accurate answer. Reference specific files and line numbers when relevant.`,
-        },
-      ],
-    });
+Provide a clear, accurate answer. Reference specific files and line numbers when relevant.`
+    );
 
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        send("chunk", event.delta.text);
-      }
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) send("chunk", text);
     }
 
     done();

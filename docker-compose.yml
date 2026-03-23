@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ai_platform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_dev_platform}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: api_gateway
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${API_GATEWAY_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  github-service:
+    build:
+      context: ./services/github-service
+      dockerfile: Dockerfile
+    container_name: github_service
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${GITHUB_SERVICE_PORT:-3002}:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: ai_service
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${AI_SERVICE_PORT:-3003}:3003"
+
+  embeddings-service:
+    build:
+      context: ./services/embeddings-service
+      dockerfile: Dockerfile
+    container_name: embeddings_service
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${EMBEDDINGS_SERVICE_PORT:-3004}:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  repo-qa-service:
+    build:
+      context: ./services/repo-qa-service
+      dockerfile: Dockerfile
+    container_name: repo_qa_service
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${REPO_QA_SERVICE_PORT:-3005}:3005"
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:

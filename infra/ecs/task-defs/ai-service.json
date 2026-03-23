@@ -1,0 +1,34 @@
+{
+  "family": "ai-platform-ai-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "ai-service",
+      "image": "PLACEHOLDER",
+      "portMappings": [{ "containerPort": 3003, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "AI_SERVICE_PORT", "value": "3003" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
+        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:ANTHROPIC_API_KEY::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-platform/ai-service",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3003/health || exit 1"],
+        "interval": 30, "timeout": 5, "retries": 3, "startPeriod": 30
+      }
+    }
+  ]
+}

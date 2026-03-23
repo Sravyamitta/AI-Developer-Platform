@@ -1,0 +1,38 @@
+{
+  "family": "ai-platform-github-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "github-service",
+      "image": "PLACEHOLDER",
+      "portMappings": [{ "containerPort": 3002, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "GITHUB_SERVICE_PORT", "value": "3002" },
+        { "name": "EMBEDDINGS_SERVICE_PORT", "value": "3004" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL",          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
+        { "name": "JWT_SECRET",            "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:JWT_SECRET::" },
+        { "name": "GITHUB_CLIENT_ID",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GITHUB_CLIENT_ID::" },
+        { "name": "GITHUB_CLIENT_SECRET",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GITHUB_CLIENT_SECRET::" },
+        { "name": "GITHUB_WEBHOOK_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:GITHUB_WEBHOOK_SECRET::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-platform/github-service",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"],
+        "interval": 30, "timeout": 5, "retries": 3, "startPeriod": 30
+      }
+    }
+  ]
+}

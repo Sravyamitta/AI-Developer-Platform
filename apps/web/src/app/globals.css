@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .input-base {
+    @apply w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5
+           text-gray-100 placeholder-gray-500 text-sm
+           focus:outline-none focus:border-blue-500 transition;
+  }
+
+  .textarea-base {
+    @apply w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
+           text-gray-100 placeholder-gray-500 text-sm resize-none
+           focus:outline-none focus:border-blue-500 transition;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-500 disabled:opacity-50
+           text-white text-sm font-medium px-5 py-2 rounded-lg transition;
+  }
+}

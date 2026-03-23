@@ -1,0 +1,35 @@
+{
+  "family": "ai-platform-embeddings-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "embeddings-service",
+      "image": "PLACEHOLDER",
+      "portMappings": [{ "containerPort": 3004, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "EMBEDDINGS_SERVICE_PORT", "value": "3004" },
+        { "name": "EMBEDDING_PROVIDER", "value": "voyage" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:DATABASE_URL::" },
+        { "name": "VOYAGE_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT:secret:ai-platform/config:VOYAGE_API_KEY::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-platform/embeddings-service",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3004/health || exit 1"],
+        "interval": 30, "timeout": 5, "retries": 3, "startPeriod": 30
+      }
+    }
+  ]
+}

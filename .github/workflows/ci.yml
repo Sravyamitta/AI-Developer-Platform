@@ -57,23 +57,23 @@ jobs:
         run: yarn workspace web lint
 
   docker-build:
-    name: Docker Build Check
+    name: Docker Build — ${{ matrix.service }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - service: web
-            context: apps/web
+            dockerfile: apps/web/Dockerfile
           - service: api-gateway
-            context: apps/api-gateway
+            dockerfile: apps/api-gateway/Dockerfile
           - service: github-service
-            context: services/github-service
+            dockerfile: services/github-service/Dockerfile
           - service: ai-service
-            context: services/ai-service
+            dockerfile: services/ai-service/Dockerfile
           - service: embeddings-service
-            context: services/embeddings-service
+            dockerfile: services/embeddings-service/Dockerfile
           - service: repo-qa-service
-            context: services/repo-qa-service
+            dockerfile: services/repo-qa-service/Dockerfile
     steps:
       - uses: actions/checkout@v4
 
@@ -82,7 +82,8 @@ jobs:
       - name: Build ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }}
+          context: .
+          file: ${{ matrix.dockerfile }}
           push: false
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

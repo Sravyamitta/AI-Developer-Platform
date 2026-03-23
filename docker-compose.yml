@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -35,8 +33,8 @@ services:
 
   github-service:
     build:
-      context: ./services/github-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/github-service/Dockerfile
     container_name: github_service
     restart: unless-stopped
     env_file: .env
@@ -48,18 +46,21 @@ services:
 
   ai-service:
     build:
-      context: ./services/ai-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/ai-service/Dockerfile
     container_name: ai_service
     restart: unless-stopped
     env_file: .env
     ports:
       - "${AI_SERVICE_PORT:-3003}:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   embeddings-service:
     build:
-      context: ./services/embeddings-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/embeddings-service/Dockerfile
     container_name: embeddings_service
     restart: unless-stopped
     env_file: .env
@@ -71,18 +72,21 @@ services:
 
   repo-qa-service:
     build:
-      context: ./services/repo-qa-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/repo-qa-service/Dockerfile
     container_name: repo_qa_service
     restart: unless-stopped
     env_file: .env
     ports:
       - "${REPO_QA_SERVICE_PORT:-3005}:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
     container_name: web
     restart: unless-stopped
     env_file: .env

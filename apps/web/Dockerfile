@@ -1,17 +1,15 @@
 FROM node:20-alpine AS base
+RUN apk upgrade --no-cache
 WORKDIR /app
+
 COPY package.json yarn.lock ./
+COPY tsconfig.base.json ./
+COPY packages/shared ./packages/shared
+COPY apps/web ./apps/web
+
 RUN yarn install --frozen-lockfile
+RUN yarn workspace shared build
+RUN yarn workspace web build
 
-FROM base AS builder
-COPY . .
-RUN yarn build
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["yarn", "workspace", "web", "start"]
